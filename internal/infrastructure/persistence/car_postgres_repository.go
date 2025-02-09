@@ -110,3 +110,26 @@ func (cpr CarPostgresRepository) GetByID(ctx context.Context, id int) (entity.Ca
 	}
 	return car, nil
 }
+
+func (cpr CarPostgresRepository) Update(ctx context.Context, car entity.Car) error {
+	// query to database
+	query := `UPDATE cars SET brand = $1, model = $2, type = $3, engine = $4, chassis = $5, gross_weight = $6, seats = $7, color = $8, total_mass = $9, tower_mass = $10, number_plate = $11, driver_id = $12
+	WHERE id = $13`
+	_, err := cpr.db.Exec(ctx, query, car.Brand, car.Model, car.Type, car.Engine, car.Chassis, car.GrossWeight, car.Seats, car.Color, car.TotalMass, car.TowerMass, car.NumberPlate, car.DriverID, car.ID)
+	if err != nil {
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == DuplicateKeyError {
+			switch pgErr.ConstraintName {
+			case ConstraintModel:
+				return manage_car.ErrModelExisted
+			case ConstraintNumberPlate:
+				return manage_car.ErrNumberPlateExisted
+			case ConstraintEngine:
+				return manage_car.ErrEngineExisted
+			case ConstraintChassis:
+				return manage_car.ErrChassisExisted
+			}
+		}
+		return err
+	}
+	return nil
+}

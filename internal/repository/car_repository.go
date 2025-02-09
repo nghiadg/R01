@@ -10,4 +10,5 @@ type ICarRepository interface {
 	HasExisted(ctx context.Context, numberPlate string) (bool, error)
 	List(ctx context.Context, pageSize, page, lastID int) ([]entity.Car, error)
 	GetByID(ctx context.Context, id int) (entity.Car, error)
+	Update(ctx context.Context, car entity.Car) error
 }
