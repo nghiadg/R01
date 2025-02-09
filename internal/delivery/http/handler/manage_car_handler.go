@@ -16,11 +16,12 @@ type ManageCarHandler struct {
 	ListCarUsecase    manage_car.ListCarUsecase
 	DetailsCarUsecase manage_car.DetailsCarUsecase
 	UpdateCarUsecase  manage_car.UpdateCarUsecase
+	DeleteCarUsecase  manage_car.DeleteCarUsecase
 }
 
 func NewManageCarHandler(createCarUsecase manage_car.CreateCarUsecase, listCarUsecase manage_car.ListCarUsecase,
-	detailsCarUsecase manage_car.DetailsCarUsecase, updateCarUsecase manage_car.UpdateCarUsecase) *ManageCarHandler {
-	return &ManageCarHandler{CreateCarUsecase: createCarUsecase, ListCarUsecase: listCarUsecase, DetailsCarUsecase: detailsCarUsecase, UpdateCarUsecase: updateCarUsecase}
+	detailsCarUsecase manage_car.DetailsCarUsecase, updateCarUsecase manage_car.UpdateCarUsecase, deleteCarUsecase manage_car.DeleteCarUsecase) *ManageCarHandler {
+	return &ManageCarHandler{CreateCarUsecase: createCarUsecase, ListCarUsecase: listCarUsecase, DetailsCarUsecase: detailsCarUsecase, UpdateCarUsecase: updateCarUsecase, DeleteCarUsecase: deleteCarUsecase}
 }
 
 func (mch *ManageCarHandler) CreateCar(w http.ResponseWriter, r *http.Request) {
@@ -264,5 +265,32 @@ func (mch *ManageCarHandler) UpdateCar(w http.ResponseWriter, r *http.Request) {
 	http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
 		Status:  http.StatusOK,
 		Message: "Car updated",
+	})
+}
+
+func (mch *ManageCarHandler) DeleteCar(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid id",
+		})
+		return
+	}
+
+	err = mch.DeleteCarUsecase.Execute(r.Context(), id)
+
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "Internal server error",
+		})
+		return
+	}
+
+	http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+		Status:  http.StatusOK,
+		Message: "Car deleted",
 	})
 }

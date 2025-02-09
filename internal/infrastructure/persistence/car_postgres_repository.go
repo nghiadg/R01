@@ -133,3 +133,12 @@ func (cpr CarPostgresRepository) Update(ctx context.Context, car entity.Car) err
 	}
 	return nil
 }
+
+func (cpr CarPostgresRepository) Delete(ctx context.Context, id int) error {
+	// query to database
+	_, err := cpr.db.Exec(ctx, `DELETE FROM cars WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

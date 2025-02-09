@@ -11,4 +11,5 @@ type ICarRepository interface {
 	List(ctx context.Context, pageSize, page, lastID int) ([]entity.Car, error)
 	GetByID(ctx context.Context, id int) (entity.Car, error)
 	Update(ctx context.Context, car entity.Car) error
+	Delete(ctx context.Context, id int) error
 }

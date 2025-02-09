@@ -18,12 +18,14 @@ func ManageCarRouter(db *pgxpool.Pool) *chi.Mux {
 	listCarUsecase := manage_car.NewListCarUsecase(carPostgresRepository)
 	detailsCarUsecase := manage_car.NewDetailsCarUsecase(carPostgresRepository)
 	updateCarUsecase := manage_car.NewUpdateCarUsecase(carPostgresRepository)
-	manageCarHandler := handler.NewManageCarHandler(*createCarUsecase, *listCarUsecase, *detailsCarUsecase, *updateCarUsecase)
+	deleteCarUsecase := manage_car.NewDeleteCarUsecase(carPostgresRepository)
+	manageCarHandler := handler.NewManageCarHandler(*createCarUsecase, *listCarUsecase, *detailsCarUsecase, *updateCarUsecase, *deleteCarUsecase)
 
 	r.Post("/create", manageCarHandler.CreateCar)
 	r.Get("/list", manageCarHandler.ListCar)
 	r.Get("/details/{id}", manageCarHandler.DetailsCar)
 	r.Put("/update/{id}", manageCarHandler.UpdateCar)
+	r.Delete("/delete/{id}", manageCarHandler.DeleteCar)
 
 	return r
 }
