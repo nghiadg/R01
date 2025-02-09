@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"r01/internal/repository"
 	"r01/internal/utils/jwt"
 	"time"
@@ -22,15 +21,16 @@ type LoginParams struct {
 	Password string `json:"password"`
 }
 
-type LoginResult struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+type User struct {
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
 }
 
-// errors
-var (
-	ErrInvalidPassword = errors.New("invalid password")
-)
+type LoginResult struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+	User         User   `json:"user"`
+}
 
 func (lu LoginUsecase) Execute(params LoginParams) (*LoginResult, error) {
 	user, err := lu.userRepo.FindByEmail(params.Email)
@@ -66,6 +66,7 @@ func (lu LoginUsecase) Execute(params LoginParams) (*LoginResult, error) {
 	return &LoginResult{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		User:         User{FirstName: user.FirstName, LastName: user.LastName},
 	}, nil
 
 }

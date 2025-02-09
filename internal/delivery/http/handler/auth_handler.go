@@ -9,11 +9,11 @@ import (
 )
 
 type AuthHandler struct {
-	loginUsecase auth.LoginUsecase
+	LoginUsecase auth.LoginUsecase
 }
 
 func NewAuthHandler(loginUsecase auth.LoginUsecase) *AuthHandler {
-	return &AuthHandler{loginUsecase: loginUsecase}
+	return &AuthHandler{LoginUsecase: loginUsecase}
 }
 
 func (ah *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +29,7 @@ func (ah *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := ah.loginUsecase.Execute(params)
+	result, err := ah.LoginUsecase.Execute(params)
 
 	if err != nil {
 		if errors.Is(err, auth.ErrInvalidPassword) {
