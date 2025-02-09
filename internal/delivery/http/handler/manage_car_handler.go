@@ -5,14 +5,17 @@ import (
 	"net/http"
 	"r01/internal/delivery/http/http_utils"
 	"r01/internal/usecase/manage_car"
+
+	"github.com/gorilla/schema"
 )
 
 type ManageCarHandler struct {
 	CreateCarUsecase manage_car.CreateCarUsecase
+	ListCarUsecase   manage_car.ListCarUsecase
 }
 
-func NewManageCarHandler(createCarUsecase manage_car.CreateCarUsecase) *ManageCarHandler {
-	return &ManageCarHandler{CreateCarUsecase: createCarUsecase}
+func NewManageCarHandler(createCarUsecase manage_car.CreateCarUsecase, listCarUsecase manage_car.ListCarUsecase) *ManageCarHandler {
+	return &ManageCarHandler{CreateCarUsecase: createCarUsecase, ListCarUsecase: listCarUsecase}
 }
 
 func (mch *ManageCarHandler) CreateCar(w http.ResponseWriter, r *http.Request) {
@@ -98,5 +101,34 @@ func (mch *ManageCarHandler) CreateCar(w http.ResponseWriter, r *http.Request) {
 	http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
 		Status:  http.StatusOK,
 		Message: "Car created",
+	})
+}
+
+func (mch *ManageCarHandler) ListCar(w http.ResponseWriter, r *http.Request) {
+	var params manage_car.ListCarParams
+	decoder := schema.NewDecoder()
+	err := decoder.Decode(&params, r.URL.Query())
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid query params",
+		})
+		return
+	}
+
+	cars, err := mch.ListCarUsecase.Execute(r.Context(), params)
+
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "Internal server error",
+		})
+		return
+	}
+
+	http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+		Status:  http.StatusOK,
+		Data:    cars,
+		Message: "Get list cars successfully",
 	})
 }

@@ -13,6 +13,10 @@ type CreateCarUsecase struct {
 	carRepo repository.ICarRepository
 }
 
+func NewCreateCarUsecase(carRepo repository.ICarRepository) *CreateCarUsecase {
+	return &CreateCarUsecase{carRepo: carRepo}
+}
+
 type CreateCarParams struct {
 	Brand       string `json:"brand" validate:"required"`
 	Model       string `json:"model" validate:"required"`
@@ -32,10 +36,6 @@ type CreateCarParams struct {
 func (cc CreateCarParams) Validate() error {
 	validate := validator.New()
 	return validate.Struct(cc)
-}
-
-func NewCreateCarUsecase(carRepo repository.ICarRepository) *CreateCarUsecase {
-	return &CreateCarUsecase{carRepo: carRepo}
 }
 
 func (cc CreateCarUsecase) Execute(ctx context.Context, carParams CreateCarParams) error {

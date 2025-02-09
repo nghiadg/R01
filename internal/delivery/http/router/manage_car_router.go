@@ -14,10 +14,12 @@ func ManageCarRouter(db *pgxpool.Pool) *chi.Mux {
 
 	// create dependencies
 	carPostgresRepository := persistence.NewCarPostgresRepository(db)
-	manageCarUsecase := manage_car.NewCreateCarUsecase(carPostgresRepository)
-	manageCarHandler := handler.NewManageCarHandler(*manageCarUsecase)
+	createCarUsecase := manage_car.NewCreateCarUsecase(carPostgresRepository)
+	listCarUsecase := manage_car.NewListCarUsecase(carPostgresRepository)
+	manageCarHandler := handler.NewManageCarHandler(*createCarUsecase, *listCarUsecase)
 
 	r.Post("/create", manageCarHandler.CreateCar)
+	r.Get("/list", manageCarHandler.ListCar)
 
 	return r
 }
