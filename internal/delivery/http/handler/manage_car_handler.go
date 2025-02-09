@@ -1,0 +1,296 @@
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+	"r01/internal/delivery/http/http_utils"
+	"r01/internal/usecase/manage_car"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/schema"
+)
+
+type ManageCarHandler struct {
+	CreateCarUsecase  manage_car.CreateCarUsecase
+	ListCarUsecase    manage_car.ListCarUsecase
+	DetailsCarUsecase manage_car.DetailsCarUsecase
+	UpdateCarUsecase  manage_car.UpdateCarUsecase
+	DeleteCarUsecase  manage_car.DeleteCarUsecase
+}
+
+func NewManageCarHandler(createCarUsecase manage_car.CreateCarUsecase, listCarUsecase manage_car.ListCarUsecase,
+	detailsCarUsecase manage_car.DetailsCarUsecase, updateCarUsecase manage_car.UpdateCarUsecase, deleteCarUsecase manage_car.DeleteCarUsecase) *ManageCarHandler {
+	return &ManageCarHandler{CreateCarUsecase: createCarUsecase, ListCarUsecase: listCarUsecase, DetailsCarUsecase: detailsCarUsecase, UpdateCarUsecase: updateCarUsecase, DeleteCarUsecase: deleteCarUsecase}
+}
+
+func (mch *ManageCarHandler) CreateCar(w http.ResponseWriter, r *http.Request) {
+	var params manage_car.CreateCarParams
+	err := json.NewDecoder(r.Body).Decode(&params)
+
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid request body",
+		})
+		return
+	}
+
+	err = mch.CreateCarUsecase.Execute(r.Context(), params)
+
+	if err != nil {
+		switch err {
+		case manage_car.ErrExistedCar:
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusBadRequest,
+				Message: "Car already existed",
+			})
+		case manage_car.ErrModelExisted:
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusBadRequest,
+				Message: "Model already existed",
+				Error: []http_utils.Error{
+					{
+						Code:    "model_existed",
+						Message: "Model already existed",
+						Field:   "model",
+					},
+				},
+			})
+		case manage_car.ErrNumberPlateExisted:
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusBadRequest,
+				Message: "Number plate already existed",
+				Error: []http_utils.Error{
+					{
+						Code:    "number_plate_existed",
+						Message: "Number plate already existed",
+						Field:   "numberPlate",
+					},
+				},
+			})
+		case manage_car.ErrEngineExisted:
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusBadRequest,
+				Message: "Engine already existed",
+				Error: []http_utils.Error{
+					{
+						Code:    "engine_existed",
+						Message: "Engine already existed",
+						Field:   "engine",
+					},
+				},
+			})
+		case manage_car.ErrChassisExisted:
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusBadRequest,
+				Message: "Chassis already existed",
+				Error: []http_utils.Error{
+					{
+						Code:    "chassis_existed",
+						Message: "Chassis already existed",
+						Field:   "chassis",
+					},
+				},
+			})
+		default:
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusInternalServerError,
+				Message: "Internal server error",
+			})
+		}
+
+		return
+
+	}
+
+	http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+		Status:  http.StatusOK,
+		Message: "Car created",
+	})
+}
+
+func (mch *ManageCarHandler) ListCar(w http.ResponseWriter, r *http.Request) {
+	var params manage_car.ListCarParams
+	decoder := schema.NewDecoder()
+	err := decoder.Decode(&params, r.URL.Query())
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid query params",
+		})
+		return
+	}
+
+	cars, err := mch.ListCarUsecase.Execute(r.Context(), params)
+
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "Internal server error",
+		})
+		return
+	}
+
+	http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+		Status:  http.StatusOK,
+		Data:    cars,
+		Message: "Get list cars successfully",
+	})
+}
+
+func (mch *ManageCarHandler) DetailsCar(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+
+	id, err := strconv.Atoi(idStr)
+
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid id",
+		})
+		return
+	}
+
+	car, err := mch.DetailsCarUsecase.Execute(r.Context(), id)
+
+	if err != nil {
+		if err == manage_car.ErrNotFound {
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusNotFound,
+				Message: "Not found car details",
+			})
+			return
+		}
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "Internal server error",
+		})
+		return
+	}
+
+	http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+		Status:  http.StatusOK,
+		Data:    car,
+		Message: "Get car details successfully",
+	})
+}
+
+func (mch *ManageCarHandler) UpdateCar(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid id",
+		})
+		return
+	}
+
+	var params manage_car.UpdateCarParams
+	params.ID = id
+	err = json.NewDecoder(r.Body).Decode(&params)
+
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid request body",
+		})
+		return
+	}
+
+	err = mch.UpdateCarUsecase.Execute(r.Context(), params)
+
+	if err != nil {
+		switch err {
+		case manage_car.ErrModelExisted:
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusBadRequest,
+				Message: "Model already existed",
+				Error: []http_utils.Error{
+					{
+						Code:    "model_existed",
+						Message: "Model already existed",
+						Field:   "model",
+					},
+				},
+			})
+		case manage_car.ErrNumberPlateExisted:
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusBadRequest,
+				Message: "Number plate already existed",
+				Error: []http_utils.Error{
+					{
+						Code:    "number_plate_existed",
+						Message: "Number plate already existed",
+						Field:   "numberPlate",
+					},
+				},
+			})
+		case manage_car.ErrEngineExisted:
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusBadRequest,
+				Message: "Engine already existed",
+				Error: []http_utils.Error{
+					{
+						Code:    "engine_existed",
+						Message: "Engine already existed",
+						Field:   "engine",
+					},
+				},
+			})
+		case manage_car.ErrChassisExisted:
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusBadRequest,
+				Message: "Chassis already existed",
+				Error: []http_utils.Error{
+					{
+						Code:    "chassis_existed",
+						Message: "Chassis already existed",
+						Field:   "chassis",
+					},
+				},
+			})
+		default:
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusInternalServerError,
+				Message: "Internal server error",
+			})
+		}
+
+		return
+
+	}
+
+	http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+		Status:  http.StatusOK,
+		Message: "Car updated",
+	})
+}
+
+func (mch *ManageCarHandler) DeleteCar(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid id",
+		})
+		return
+	}
+
+	err = mch.DeleteCarUsecase.Execute(r.Context(), id)
+
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "Internal server error",
+		})
+		return
+	}
+
+	http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+		Status:  http.StatusOK,
+		Message: "Car deleted",
+	})
+}

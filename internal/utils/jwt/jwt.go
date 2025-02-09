@@ -30,8 +30,8 @@ func VerifyToken(tokenString string) (*jwt.Token, jwt.MapClaims, error) {
 		return nil, nil, err
 	}
 
-	if payload, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return token, payload, nil
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return token, claims, nil
 	}
 
 	return nil, nil, jwt.ErrSignatureInvalid
