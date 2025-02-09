@@ -5,17 +5,21 @@ import (
 	"net/http"
 	"r01/internal/delivery/http/http_utils"
 	"r01/internal/usecase/manage_car"
+	"strconv"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/schema"
 )
 
 type ManageCarHandler struct {
-	CreateCarUsecase manage_car.CreateCarUsecase
-	ListCarUsecase   manage_car.ListCarUsecase
+	CreateCarUsecase  manage_car.CreateCarUsecase
+	ListCarUsecase    manage_car.ListCarUsecase
+	DetailsCarUsecase manage_car.DetailsCarUsecase
 }
 
-func NewManageCarHandler(createCarUsecase manage_car.CreateCarUsecase, listCarUsecase manage_car.ListCarUsecase) *ManageCarHandler {
-	return &ManageCarHandler{CreateCarUsecase: createCarUsecase, ListCarUsecase: listCarUsecase}
+func NewManageCarHandler(createCarUsecase manage_car.CreateCarUsecase, listCarUsecase manage_car.ListCarUsecase,
+	detailsCarUsecase manage_car.DetailsCarUsecase) *ManageCarHandler {
+	return &ManageCarHandler{CreateCarUsecase: createCarUsecase, ListCarUsecase: listCarUsecase, DetailsCarUsecase: detailsCarUsecase}
 }
 
 func (mch *ManageCarHandler) CreateCar(w http.ResponseWriter, r *http.Request) {
@@ -130,5 +134,42 @@ func (mch *ManageCarHandler) ListCar(w http.ResponseWriter, r *http.Request) {
 		Status:  http.StatusOK,
 		Data:    cars,
 		Message: "Get list cars successfully",
+	})
+}
+
+func (mch *ManageCarHandler) DetailsCar(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+
+	id, err := strconv.Atoi(idStr)
+
+	if err != nil {
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid id",
+		})
+		return
+	}
+
+	car, err := mch.DetailsCarUsecase.Execute(r.Context(), id)
+
+	if err != nil {
+		if err == manage_car.ErrNotFound {
+			http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+				Status:  http.StatusNotFound,
+				Message: "Not found car details",
+			})
+			return
+		}
+		http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "Internal server error",
+		})
+		return
+	}
+
+	http_utils.WriteJSONResponse(w, http_utils.HttpResponse{
+		Status:  http.StatusOK,
+		Data:    car,
+		Message: "Get car details successfully",
 	})
 }

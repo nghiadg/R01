@@ -95,3 +95,18 @@ func (cpr CarPostgresRepository) List(ctx context.Context, pageSize, page, curso
 	}
 	return cars, nil
 }
+
+func (cpr CarPostgresRepository) GetByID(ctx context.Context, id int) (entity.Car, error) {
+	// query to database
+	var car entity.Car
+	err := cpr.db.QueryRow(ctx, `SELECT id, brand, model, type, engine, chassis, gross_weight, seats, color, total_mass, tower_mass, number_plate, driver_id 
+	FROM cars WHERE id = $1`, id).Scan(&car.ID, &car.Brand, &car.Model, &car.Type, &car.Engine, &car.Chassis,
+		&car.GrossWeight, &car.Seats, &car.Color, &car.TotalMass, &car.TowerMass, &car.NumberPlate, &car.DriverID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return entity.Car{}, manage_car.ErrNotFound
+		}
+		return entity.Car{}, err
+	}
+	return car, nil
+}

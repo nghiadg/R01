@@ -10,4 +10,7 @@ var (
 	ErrModelExisted       = errors.New("model has existed")
 	ErrEngineExisted      = errors.New("engine has existed")
 	ErrChassisExisted     = errors.New("chassis has existed")
+
+	// details car error
+	ErrNotFound = errors.New("car not found")
 )
